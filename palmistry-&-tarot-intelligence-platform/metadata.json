@@ -1,0 +1,10 @@
+{
+  "name": "Palmistry & Tarot Intelligence Platform",
+  "description": "AI-powered spiritual intelligence platform featuring computer vision palm line analysis, interactive tarot reading spreads, personality profiling, life trend forecasting, and role-based analytics dashboards.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,357 @@
+==============================================================================================
+          Palmistry & Tarot Intelligence Platform - FILE STRUCTURE & ARCHITECTURE EXPLANATION
+==============================================================================================
+
+This document provides a comprehensive breakdown of the entire platform architecture, detailing
+system design patterns, communication flows, and an exhaustive file-by-file catalog categorized 
+into their respective functional domains:
+  1. High-Level Architecture & End-to-End Data Flow Diagrams
+  2. Frontend Architecture (UI, Client Views, Modals & Dashboards)
+  3. Backend & Persistent Database (Server Infrastructure & Storage Vaults)
+  4. AI Analysis, Synthesis, Knowledge Engines & Astrologer Consultation System
+  5. Build, Configuration, Environment & Documentation Infrastructure
+  6. Data Isolation, Trial Security & State Synchronization Model
+
+==============================================================================================
+1. HIGH-LEVEL ARCHITECTURE & END-TO-END DATA FLOW
+==============================================================================================
+
+  +-----------------------------------------------------------------------------------------+
+  |                                   CLIENT TIER (React 19)                                |
+  |                                                                                         |
+  |  +---------------------+  +----------------------+  +--------------------------------+  |
+  |  | PalmScanner.tsx     |  | TarotStudio.tsx      |  | FrontPageLanding.tsx           |  |
+  |  | - Video / Upload    |  | - 1/3/5/7 Card Layout|  | DailySpiritualAffirmationCard  |  |
+  |  | - Line Measurements |  | - Upright / Reversed |  | ExpertCtaBanner.tsx            |  |
+  |  +----------+----------+  +----------+-----------+  +---------------+----------------+  |
+  |             |                        |                              |                   |
+  |             +------------+-----------+                              |                   |
+  |                          v                                          |                   |
+  |             +----------------------------+                          |                   |
+  |             | UnifiedReadingView.tsx     |                          |                   |
+  |             | - Synthesis Presentation   |<-------------------------+                   |
+  |             | - Weighted Confidence Score|                                              |
+  |             | - Printable PDF Export     |                                              |
+  |             +-------------+--------------+                                              |
+  |                           | (Escalate to 1-on-1 Consultation)                           |
+  |                           v                                                             |
+  |             +----------------------------+      +------------------------------------+  |
+  |             | LiveExpertsStudio.tsx      |----->| LiveVideoCallRoom.tsx              |  |
+  |             | - Astrologer Marketplace   |      | - WebRTC Simulation & Live Speech  |  |
+  |             | - Free Trial Verification  |      | - Subtitles, In-Call Chat & Notes  |  |
+  |             | - IST Slot Booking Drawer  |      | - Prescribed Remedies & .ICS Export|  |
+  |             +----------------------------+      +------------------------------------+  |
+  +-----------------------------------------------------------------------------------------+
+                                 |                                     |
+               Client State / Storage Sync                  REST API Calls & Gemini AI
+                                 |                                     |
+  +------------------------------v-------------------------------------v--------------------+
+  |                           CLIENT PERSISTENCE LAYER (Browser LocalStorage)               |
+  |  • celestial_user_accounts_db: User profile metadata & astrological birth data          |
+  |  • celestial_user_data_db:     Per-user scans, tarot sessions & synthesized reports      |
+  |  • celestial_user_credentials: User ID, role & password vault records                   |
+  |  • celestial_consult_db_v2:    Trial quota (2 free sessions), bookings & phone registry |
+  +-----------------------------------------------------------------------------------------+
+                                 |
+                     Auto Sync via /api/users/save-data
+                                 |
+  +------------------------------v----------------------------------------------------------+
+  |                           BACKEND SERVER TIER (Node.js / Express / tsx)                 |
+  |  • server.ts (Port 3000):                                                               |
+  |    - Vite middleware (Dev) / Static Asset Serving (Production)                          |
+  |    - Authentication & User Profile Endpoints (/api/auth/login, /api/auth/register)       |
+  |    - Database Sync Endpoints (/api/users/save-data, /api/auth/sync-credentials)         |
+  |    - Gemini AI Multi-Model Fallback Engine (gemini-2.5-flash -> gemini-2.0-flash)       |
+  |  • src/data/dbServer.ts:                                                                |
+  |    - Server-side atomic file I/O operations and schema integrity validators             |
+  +-----------------------------------------------------------------------------------------+
+                                 |
+                     Atomic JSON File Persistence
+                                 |
+  +------------------------------v----------------------------------------------------------+
+  |                           PHYSICAL STORAGE & CLOUD SERVICES                             |
+  |  • /data/database.json: On-disk persistent JSON store surviving application restarts     |
+  |  • Google Gemini API: Multi-modal vision analysis & procedural synthesis generation     |
+  +-----------------------------------------------------------------------------------------+
+
+
+==============================================================================================
+2. FRONTEND FILES (User Interface, Views, Modals & Client Experience)
+==============================================================================================
+
+• /index.html
+  - Root HTML5 single-page application (SPA) container.
+  - Mounts the `#root` DOM element, sets responsive viewport meta tags, application title,
+    and Google Fonts preconnect configurations.
+
+• /src/main.tsx
+  - Primary client-side application bootstrap rendering App into `#root` via React 19 `createRoot`.
+  - Configures global window error and unhandled promise rejection listeners to guarantee
+    flawless, uninterrupted rendering within sandboxed iframes.
+
+• /src/App.tsx
+  - Root application controller orchestrating top-level navigation across tabs:
+    'home', 'palm', 'tarot', 'synthesis', 'experts', 'dashboard', 'admin'.
+  - Manages active user session auto-restoration, modal overlays (Auth, User Profile),
+    and passing active Palm & Tarot reports into the Live Consultation workflow.
+
+• /src/index.css
+  - Global styling foundation powered by Tailwind CSS.
+  - Configures deep-space cosmic color variables, glowing mystical borders, ambient shimmer
+    animations, custom scrollbars, and glassmorphism backdrop filters.
+
+• /src/types.ts
+  - Centralized TypeScript domain type definitions used across client and server:
+    * User Profile & Roles (`UserProfile`, `UserRole`: 'user' | 'reader' | 'consultant' | 'admin')
+    * Palmistry Models (`PalmFeatures`, `PalmLineAnalysis`, mount metrics, confidence scores)
+    * Tarot Models (`TarotCard`, `DrawnTarotCard`, `TarotReadingSession`, `SpreadType`)
+    * Astrologer & Consultation Models (`ExpertProfile`, `ConsultationBooking`, `TrialAccount`,
+      `InCallChatMessage`, `AstrologerRemedy`, `ConsultTimeSlot`)
+    * Synthesis Models (`SynthesisReport`, `WeightedScoreBreakdown`, `PersonalityIntelligence`)
+
+• /src/components/Navbar.tsx
+  - Top navigation bar featuring brand identity, responsive tab switching buttons,
+    active Zodiac sign badge, real-time notification badge, and User Profile / Login trigger.
+
+• /src/components/FrontPageLanding.tsx
+  - Engaging cosmic landing experience featuring animated hero banners, instant CTA triggers
+    for Palm Scanning and Tarot spreads, feature highlights, and the Daily Spiritual Affirmation card.
+
+• /src/components/DailySpiritualAffirmationCard.tsx
+  - Interactive daily spiritual attunement card generating 24-hour goal-aligned affirmations,
+    authentic Sanskrit root mantras, chakra alignment indicators, elemental resonance,
+    and daily contemplation exercises with audio-reading and social sharing actions.
+
+• /src/components/ExpertCtaBanner.tsx
+  - High-conversion escalation banner embedded inside reading views encouraging seekers to review
+    their AI palm/tarot results live with a human master astrologer (featuring free ₹0 trial indicators).
+
+• /src/components/LiveExpertsStudio.tsx
+  - Comprehensive Astrologer Consultation & Chiromancy marketplace:
+    * Specialty filtering ('vedic', 'palm', 'tarot', 'western') & real-time presence indicators ('online', 'busy', 'offline')
+    * Seeker Trial Balance Tracker (2 free 1-on-1 consultations per verified seeker)
+    * 3-Step Booking Drawer: Expert selection, IST time-slot scheduling, context attachment (Palm/Tarot scans)
+    * Mobile OTP Verification: 10-digit Indian phone anti-abuse validation (+91)
+    * Confirmed Bookings Drawer with one-click RFC 5545 standard `.ics` calendar exports
+
+• /src/components/LiveVideoCallRoom.tsx
+  - Full-screen interactive video consultation room simulating a live session with master astrologers:
+    * Simulated video feeds for both Seeker and Expert with live audio synthesis and vocal accent toggles (Indian/English)
+    * Synchronized real-time speech subtitles and live captions
+    * Multi-turn astrological AI chat assistant contextualized to the seeker's attached Palm & Tarot scans
+    * In-call countdown timer with instant +10 min extension controls
+    * Astrologer delay / no-show compensation handlers
+    * Post-session summary modal featuring prescribed remedies (gemstones, mantras, tarot meditations) and `.ics` exports
+
+• /src/components/AuthModal.tsx
+  - Multi-tab authentication modal providing Email/Password Login, Registration, and SSO simulation.
+  - Automatically verifies credentials against `celestial_user_credentials_vault` and synchronizes
+    with backend persistence endpoints.
+
+• /src/components/UserProfileModal.tsx
+  - Interactive user settings modal allowing seekers to customize birth date, birth time,
+    birth location, zodiac sign, reading preferences, and spiritual priorities with instant persistence.
+
+• /src/components/NotificationCenter.tsx
+  - Slide-out alert drawer providing real-time cosmic alerts, daily planetary transit warnings,
+    and completed synthesis notifications.
+
+• /src/components/UnifiedReadingView.tsx
+  - Comprehensive multi-dimensional report viewer displaying synthesized Palmistry & Tarot analyses:
+    * Executive summaries, elemental balance meters, and archetypal strengths/weaknesses
+    * Weighted confidence score breakdown (Palm 30%, Tarot 25%, Personality 20%, Context 15%, Consistency 10%)
+    * One-click printable PDF report generation and verified ownership badges
+
+• /src/components/PalmScanner.tsx
+  - Computer vision palm analysis module supporting live camera capture and image upload.
+  - Evaluates major palm lines (Life, Head, Heart, Fate, Sun) and mount prominence levels
+    without distracting joint skeletons, calculating accurate detection confidence scores.
+
+• /src/components/TarotStudio.tsx
+  - Interactive 3D-styled tarot studio supporting 1, 3, 5, and 7-card spreads.
+  - Implements card shuffling, upright vs. reversed orientations, and archetypal synthesis.
+
+• /src/components/AutoStorageWidget.tsx
+  - Non-intrusive floating persistence monitor displaying real-time database sync status,
+    snapshot generation, and one-click JSON backup export/import tools.
+
+• /src/components/Dashboards/UserDashboard.tsx
+  - Personalized seeker dashboard strictly isolated to the authenticated user's email:
+    * Sub-tabs for Synthesized Reports, Palm Scans, Tarot Sessions, and Consultation Bookings
+    * Search, filtering, and deletion controls with automatic storage synchronization
+
+• /src/components/Dashboards/ReaderDashboard.tsx
+  - Dedicated operational dashboard for professional Tarot readers to track completed draws,
+    active seeker queues, custom spread configurations, and interpretive accuracy logs.
+
+• /src/components/Dashboards/ConsultantDashboard.tsx
+  - Specialized dashboard for Palmistry practitioners to review client hand measurements,
+    line quality distributions, mount balances, and consultation case histories.
+
+• /src/components/Dashboards/AdminDashboard.tsx
+  - System administrative command center featuring platform telemetry counters,
+    role-based access control (RBAC) user lists, and the User ID & Password Vault inspector
+    with one-click JSON credential export.
+
+
+==============================================================================================
+3. BACKEND & PERSISTENT DATABASE FILES (Server Infrastructure & Storage Vaults)
+==============================================================================================
+
+• /server.ts
+  - Express.js backend application binding to port 3000.
+  - Configures Vite development middleware (in dev mode) and static production serving from `/dist`.
+  - Integrates the Google Gemini GenAI SDK with multi-model fallback routines (`gemini-2.5-flash`
+    with automatic failover to `gemini-2.0-flash`).
+  - Implements REST API endpoints:
+    * `POST /api/auth/login`: Validates seeker/admin credentials against disk database
+    * `POST /api/auth/register`: Creates new user account and hashes/stores credentials
+    * `POST /api/auth/sync-credentials`: Atomically synchronizes client credentials vault to disk
+    * `POST /api/users/profile`: Updates user birth chart and spiritual profile
+    * `POST /api/users/save-data`: Atomically persists user palm scans, tarot sessions, and reports
+    * `GET /api/database/status`: Health check returning user counts, credentials saved, and storage size
+
+• /data/database.json
+  - The physical on-disk JSON database file ensuring permanent data persistence across server restarts.
+  - Contains records for:
+    * `users`: Registered user account profiles
+    * `credentials`: User ID, email, password, and role records
+    * `userData`: Per-user activity stores (palm scans, tarot sessions, synthesized reports)
+    * `notifications`: System announcements and cosmic transit alerts
+    * `analytics`: System telemetry counters and usage metrics
+
+• /src/data/dbServer.ts
+  - Server-side database engine providing safe, synchronous read and atomic write operations
+    to `/data/database.json`.
+  - Handles initialization from seed defaults if the database file is not yet created.
+
+• /src/database/userDatabase.ts
+  - Client-side database abstraction layer managing two local stores:
+    1. Account Store (`celestial_user_accounts_db`): User profile metadata and birth info.
+    2. Activity Store (`celestial_user_data_db`): Isolated user activity keyed by email.
+  - Automatically bridges local modifications to the backend via `/api/users/save-data`.
+
+• /src/database/userCredentialsDatabase.ts
+  - Dedicated User Credentials & Password Vault client database (`celestial_user_credentials_vault`).
+  - Manages credential storage, registration sync, credential validation, and client-side JSON export.
+
+• /src/database/consultDatabase.ts
+  - Client consultation & booking database (`celestial_consult_db_v2`):
+    * Manages seeker trial accounts (2 free trial video sessions per seeker)
+    * Enforces anti-abuse rules (10-digit Indian phone number uniqueness and device fingerprinting)
+    * Confirms bookings with attached palm/tarot scans and generates RFC 5545 `.ics` calendar files
+    * Tracks session status, extensions (+10 mins), completions, and prescribed remedies
+
+• /src/database/autoStorageManager.ts
+  - Automated persistence guardian capturing background storage snapshots, verifying schema
+    integrity, and facilitating full database import/export.
+
+• /src/data/userCredentials.ts
+  - Seed credentials definition (`UserCredentialRecord`) containing default administrative,
+    consultant, reader, and seeker accounts for instant testing.
+
+• /src/data/mockDatabase.ts
+  - Seed database containing default user profiles, sample synthesis reports, system notifications,
+    and platform analytics counters.
+
+
+==============================================================================================
+4. AI ANALYSIS, SYNTHESIS, KNOWLEDGE ENGINES & EXPERT DATA
+==============================================================================================
+
+• /src/utils/synthesisGenerator.ts
+  - Procedural and AI-assisted synthesis engine generating comprehensive multi-page readings.
+  - Merges computer vision palm geometry with tarot spread archetypes to calculate:
+    * Weighted confidence score breakdowns across 5 key dimensions
+    * Personality intelligence archetypes, strengths, weaknesses, and targeted remedies
+    * Life trend forecasts across Career, Love, and Spiritual growth vectors
+
+• /src/utils/affirmationGenerator.ts
+  - Esoteric attunement engine generating daily 24-hour spiritual affirmations.
+  - Matches user goals and active zodiac sign with root Sanskrit mantras, chakra centers,
+    elemental alignments, and tangible daily mindfulness rituals.
+
+• /src/utils/inr.ts
+  - Localized currency and time formatting utilities:
+    * `formatInr`: Formats numeric amounts as Indian Rupees (e.g. ₹1,499) using `Intl.NumberFormat`
+    * `formatIstSlot`: Formats UTC timestamps into Asia/Kolkata (IST) timezone for consultation scheduling
+
+• /src/data/expertsData.ts
+  - Master astrologer catalog (`LIVE_EXPERTS`) with detailed profiles:
+    * Verified credentials, experience years, spoken languages, and specialties
+    * Presence states ('online', 'busy', 'offline') and hourly rates in INR
+    * `generateSlotsForExpert`: Generates dynamic instant and scheduled IST time slots
+
+• /src/data/palmistryData.ts
+  - Chiromancy knowledge base mapping line characteristics, planetary mounts (Jupiter, Saturn,
+    Apollo, Venus, Mercury), and elemental hand shapes (Fire, Earth, Air, Water) to personality traits.
+
+• /src/data/tarotData.ts
+  - Complete 78-card Rider-Waite-Smith tarot deck library containing card descriptions,
+    Major/Minor Arcana designations, elemental affinities, upright meanings, and reversed meanings.
+
+
+==============================================================================================
+5. BUILD, CONFIGURATION, ENVIRONMENT & DOCUMENTATION FILES
+==============================================================================================
+
+• /.env
+  - Active environment configuration file storing the Google Gemini API key (`API_KEY`, `GEMINI_API_KEY`)
+    and the application URL (`APP_URL`).
+
+• /.env.example
+  - Template environment configuration file documenting required environment variables.
+
+• /package.json
+  - NPM project configuration declaring dependencies (React 19, Vite 6, Tailwind CSS 4, Lucide React,
+    Google GenAI SDK, Express, JSPDF), build scripts, and metadata.
+
+• /package-lock.json & /bun.lock
+  - Deterministic lockfiles locking exact package dependency versions across installations.
+
+• /vite.config.ts
+  - Vite bundling configuration enabling the React plugin and Tailwind CSS integration.
+
+• /tsconfig.json
+  - TypeScript compiler configuration specifying ES2022 target, bundler module resolution,
+    strict type checking, and JSX transformation options.
+
+• /firebase-applet-config.json
+  - Cloud client configuration, API keys, and project metadata for hosted environments.
+
+• /metadata.json
+  - Platform metadata specifying application capabilities, fullscreen permissions, and runtime flags.
+
+• /.gitignore
+  - Declares intentionally untracked build artifacts (`/dist`, `node_modules`, `.env`).
+
+• /APPLICATION_DOCUMENTATION.md
+  - Comprehensive end-user documentation, feature guide, API documentation, and user manuals.
+
+• /README.md
+  - Quick-start guide, repository overview, installation instructions, and development commands.
+
+• /PROJECT_ARCHITECTURE_EXPLANATION.txt
+  - This document; the complete, authoritative architectural blueprint and file reference.
+
+
+==============================================================================================
+6. DATA ISOLATION, TRIAL SECURITY & STATE SYNCHRONIZATION MODEL
+==============================================================================================
+
+1. Multi-Tenant Seeker Data Isolation:
+   - All user-generated scans, tarot sessions, and consultation records are strictly isolated
+     and keyed by the logged-in user's verified email address (`userEmail`).
+   - Switching accounts immediately re-indexes the dashboard and reading views to show only
+     records belonging to the active user.
+
+2. Free Trial Consultation Security & Anti-Abuse:
+   - Each seeker account receives a welcome allowance of 2 free 1-on-1 video consultation sessions.
+   - Fraud prevention is enforced through mandatory 10-digit Indian mobile number validation (+91)
+     and browser device fingerprinting registered in `celestial_consult_db_v2`.
+
+3. Dual-Layer Storage Resilience:
+   - Client actions instantly update browser `localStorage` for zero-latency UI responsiveness.
+   - Background sync hooks immediately replicate updates to `server.ts`, which atomically writes
+     changes to `/data/database.json`, ensuring data survives across browser clearing and server restarts.
+==============================================================================================
