@@ -102,59 +102,6 @@ The platform provides custom-tailored dashboards across 4 distinct user roles:
 
 ---
 
-## 🏗️ System Architecture & Data Flow
-
-```mermaid
-flowchart TD
-    subgraph Client["Client Application Tier (React 19 + TypeScript + Tailwind CSS v4)"]
-        UI_Nav["Navbar & Tab Orchestrator (App.tsx)"]
-        UI_Home["Landing & Daily Affirmations (FrontPageLanding.tsx)"]
-        UI_Palm["Palmistry Scanner (PalmScanner.tsx)\n• MediaPipe 21 Landmarks\n• FreiHAND Normalized Coordinates\n• Line Vector Tracing"]
-        UI_Tarot["Tarot Studio (TarotStudio.tsx)\n• 78 Rider-Waite Cards\n• 1/3/5/7 Card Layouts\n• Upright / Reversed Physics"]
-        UI_Synth["Unified Synthesis Engine (UnifiedReadingView.tsx)\n• Weighted Multi-Factor Score\n• 3-Horizon Trend Forecast\n• jsPDF Certificate Exporter"]
-        UI_Dash["Role Dashboards (User, Reader, Consultant, Admin)"]
-        UI_Experts["Live Experts Studio (LiveExpertsStudio.tsx)"]
-        UI_Call["Interactive Video Consultation Room (LiveVideoCallRoom.tsx)\n• Simulated WebRTC & Audio Speech\n• In-Call Chat & Remedies\n• .ICS Calendar Generator"]
-    end
-
-    subgraph Storage["Dual Persistence Layer"]
-        LocalCache[("Browser LocalStorage\n• Accounts\n• Scans & Sessions\n• Credential Vault\n• Trial Quota")]
-        ServerDB[("Server JSON Database (data/db.json)\n• Atomic File Read/Write\n• Schema Integrity Validators\n• User Registry")]
-    end
-
-    subgraph Backend["Backend API Server Tier (Node.js / Express v4 / tsx)"]
-        ServerRoute["Express Server (server.ts - Port 3000)"]
-        AuthModule["Auth & Credential Vault Endpoints\n/api/auth/login, /api/auth/register, /api/auth/me"]
-        SyncModule["Data Synchronization Endpoints\n/api/users/save-data, /api/auth/sync-credentials"]
-        ConsultModule["Consultation & Trial Engine\n/api/consultations/experts, /api/consultations/trial-status"]
-        AI_Gateway["Gemini Multi-Model Fallback Gateway\n(gemini-2.5-flash -> gemini-2.0-flash)"]
-    end
-
-    subgraph External["External AI & Cloud Services"]
-        GeminiVision["Google Gemini AI Vision & LLM Engine\n• Image Analysis & Line Depth Interpretation\n• Multi-Card Synergy Synthesis\n• Daily Affirmation Generator"]
-    end
-
-    UI_Palm -->|Base64 Image / Landmarks| ServerRoute
-    UI_Tarot -->|Card Draws & Question| ServerRoute
-    UI_Synth -->|Generate Synthesis| ServerRoute
-    UI_Home -->|Daily Affirmation| ServerRoute
-
-    ServerRoute --> AuthModule
-    ServerRoute --> SyncModule
-    ServerRoute --> ConsultModule
-    ServerRoute --> AI_Gateway
-
-    AI_Gateway <-->|@google/genai SDK| GeminiVision
-
-    Client <-->|Real-Time Local Sync| LocalCache
-    LocalCache <-->|Auto Sync Endpoint| SyncModule
-    SyncModule <-->|Atomic File I/O| ServerDB
-
-    UI_Synth -->|Escalate to 1-on-1| UI_Experts
-    UI_Experts --> UI_Call
-```
-
----
 
 ## 💻 Tech Stack & Dependencies
 
@@ -360,31 +307,7 @@ All backend endpoints are hosted on `http://localhost:3000/api` (or relative pat
 
 ---
 
-## 🚀 Deployment Guide
 
-### Deploying to Vercel
-The frontend is optimized for deployment on Vercel:
-1. Push your repository to GitHub / GitLab.
-2. Import the repository into your [Vercel Dashboard](https://vercel.com).
-3. Set the build settings:
-   * **Framework Preset**: Vite
-   * **Build Command**: `npm run build`
-   * **Output Directory**: `dist`
-4. Add Environment Variables:
-   * `GEMINI_API_KEY`: *(Optional)* Your Google Gemini API Key.
-5. Click **Deploy**. Your app will be live at `https://your-app.vercel.app`.
-
-### Deploying to Docker / Cloud Run / VPS
-To deploy the full-stack app including the Node.js Express server:
-```bash
-# 1. Build the production assets and server
-npm run build
-
-# 2. Start the production server on port 3000
-npm run start
-```
-
----
 
 ## 🛡️ Security, Privacy & Ethical AI
 
@@ -401,6 +324,6 @@ This project is licensed under the **MIT License**. You are free to modify, dist
 ---
 
 <div align="center">
-  <sub>Built with 💜 by Celestial AI Engineering Team • Fusing Esoteric Wisdom with Machine Intelligence</sub><br/>
+  <sub>Built with  by Celestial AI Engineering Team • Fusing Esoteric Wisdom with Machine Intelligence</sub><br/>
   <b><a href="https://ai-palmistry-tarot-app.vercel.app/">Launch Celestial AI Web Application →</a></b>
 </div>
